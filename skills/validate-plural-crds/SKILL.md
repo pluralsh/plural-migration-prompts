@@ -82,7 +82,7 @@ Also verify that cross-resource references to cluster-scoped resources omit `nam
 Check simple cross-resource references such as:
 
 - `ServiceDeployment.spec.repositoryRef`
-- `ServiceDeployment.spec.clusterRef`
+- `ServiceDeployment.spec.cluster` (handle name string) or `ServiceDeployment.spec.clusterRef` (object reference)
 - `GlobalService.spec.serviceRef` or `GlobalService.spec.template`
 - `Pipeline` stage service references
 - `PrAutomation.spec.repositoryRef` and `PrAutomation.spec.scmConnectionRef`
@@ -121,11 +121,11 @@ Reject or fix the output if you find:
 
 - invalid YAML
 - non-Plural resources mixed into the generated output
-- missing required references such as `clusterRef` or `repositoryRef`
+- missing cluster targeting (`spec.cluster` handle name or `clusterRef`) or `repositoryRef`
 - fields that do not exist on the target CRD version
 - `GlobalService` used where a `Pipeline` is clearly required
 - `Pipeline` used where the source intent is simple fleet replication
-- `GlobalService` with `serviceRef` pointing to a `ServiceDeployment` that has an invented `clusterRef`; prefer `template` when no concrete seed cluster exists
+- `GlobalService` with `serviceRef` pointing to a `ServiceDeployment` that has an invented cluster reference; prefer `template` when no concrete seed cluster exists
 - invented secret names, SCM connection names, or cluster identifiers presented as facts
 - `metadata.namespace` set on cluster-scoped resources (`GitRepository`, `Project`, `PrAutomation`, `NamespaceCredentials`)
 - `namespace` included in cross-resource references to cluster-scoped resources

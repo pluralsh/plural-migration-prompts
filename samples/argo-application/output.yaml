@@ -6,14 +6,6 @@ spec:
   url: ssh://git@github.com/acme/platform-infra.git
 ---
 apiVersion: deployments.plural.sh/v1alpha1
-kind: HelmRepository
-metadata:
-  name: external-dns
-  namespace: infra
-spec:
-  url: https://kubernetes-sigs.github.io/external-dns
----
-apiVersion: deployments.plural.sh/v1alpha1
 kind: Project
 metadata:
   name: payments
@@ -32,8 +24,7 @@ spec:
     ref: main
   repositoryRef:
     name: platform-infra
-  clusterRef:
-    name: prod-us-east-1
+  cluster: prod-us-east-1
 ---
 apiVersion: deployments.plural.sh/v1alpha1
 kind: GlobalService
@@ -49,9 +40,7 @@ spec:
     helm:
       chart: external-dns
       version: "1.15.0"
+      url: https://kubernetes-sigs.github.io/external-dns
       valuesFiles:
         - values/common.yaml
         - values/prod.yaml
-      repository:
-        name: external-dns
-        namespace: infra

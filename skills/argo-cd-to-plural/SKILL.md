@@ -41,6 +41,7 @@ Start with these recommended Plural CRDs when designing migrations:
 - Use the `deployments.plural.sh` API group and choose the resource version that matches the target Plural environment.
 - Reuse shared Git sources instead of redefining them per workload.
 - Prefer existing clusters over creating new `Cluster` resources unless the input explicitly asks for cluster registration. When a cluster name is present in the input but no `Cluster` CRD is generated, record it as an assumption.
+- Reference clusters using `spec.cluster` (the cluster handle name) on `ServiceDeployment` and `GlobalService`. Only use `clusterRef` when the input explicitly provides a full Cluster CRD object reference.
 - Do not invent cluster ids, secret names, SCM connection names, project ids, or RBAC bindings.
 - Put missing operational data into assumptions and review notes.
 - Keep the output idiomatic to Plural rather than mirroring every source-system detail.
@@ -62,7 +63,7 @@ Know whether each resource is cluster-scoped or namespace-scoped before generati
 | `Cluster` | Namespace-scoped — always set `metadata.namespace` |
 | `ServiceContext` | Namespace-scoped — always set `metadata.namespace` |
 
-Cross-resource references (`repositoryRef`, `clusterRef`, etc.) to cluster-scoped resources must omit `namespace` in the reference object.
+Cross-resource references (`repositoryRef`, etc.) to cluster-scoped resources must omit `namespace` in the reference object. For cluster targeting, use `spec.cluster` with the cluster handle name instead of a `clusterRef` object.
 
 ## Argo translation rules
 
@@ -70,9 +71,9 @@ Cross-resource references (`repositoryRef`, `clusterRef`, etc.) to cluster-scope
 2. Map `spec.source.repoURL` to a reusable `GitRepository` when the source is Git.
 3. Map `spec.source.path` to `spec.git.folder`.
 4. Map `spec.source.targetRevision` to `spec.git.ref` for Git sources or `spec.helm.version` for external Helm charts.
-5. Map `spec.source.chart` to `spec.helm.chart` and `spec.source.helm.valueFiles` to `spec.helm.valuesFiles`.
+5. Map `spec.source.chart` to `spec.helm.chart`, `spec.source.helm.valueFiles` to `spec.helm.valuesFiles`, and the Helm repository URL to `spec.helm.url`. Only generate a `HelmRepository` CRD when authentication credentials are required; for public repositories use `helm.url` directly.
 6. Map `spec.destination.namespace` to `ServiceDeployment.spec.namespace`.
-7. Reference destination clusters with `clusterRef`; do not invent cluster registration unless the input explicitly asks for it.
+7. Reference destination clusters with `spec.cluster` (the cluster handle name); do not invent cluster registration unless the input explicitly asks for it.
 8. Translate `ApplicationSet` cluster label selectors to `GlobalService.spec.tags` when the intent is fleet replication.
 9. Translate `ApplicationSet` to `Pipeline` only when the intent is stage promotion, ordered rollout, or manual approval across environments.
 10. Translate `AppProject` to `Project` when the project boundary still matters for tenancy or RBAC; if translated, always add a review note explaining why the boundary was kept.

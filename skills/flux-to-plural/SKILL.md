@@ -45,6 +45,7 @@ Start with these recommended Plural CRDs when designing migrations:
 - Use the `deployments.plural.sh` API group and choose the resource version that matches the target Plural environment.
 - Reuse shared Git sources instead of redefining them per workload.
 - Prefer existing clusters over creating new `Cluster` resources unless the input explicitly asks for cluster registration. When a cluster name is present in the input but no `Cluster` CRD is generated, record it as an assumption.
+- Reference clusters using `spec.cluster` (the cluster handle name) on `ServiceDeployment` and `GlobalService`. Only use `clusterRef` when the input explicitly provides a full Cluster CRD object reference.
 - Do not invent cluster ids, secret names, SCM connection names, project ids, or RBAC bindings.
 - Put missing operational data into assumptions and review notes.
 - Keep the output idiomatic to Plural rather than mirroring every source-system detail.
@@ -66,7 +67,7 @@ Know whether each resource is cluster-scoped or namespace-scoped before generati
 | `Cluster` | Namespace-scoped — always set `metadata.namespace` |
 | `ServiceContext` | Namespace-scoped — always set `metadata.namespace` |
 
-Cross-resource references (`repositoryRef`, `clusterRef`, etc.) to cluster-scoped resources must omit `namespace` in the reference object.
+Cross-resource references (`repositoryRef`, etc.) to cluster-scoped resources must omit `namespace` in the reference object. For cluster targeting, use `spec.cluster` with the cluster handle name instead of a `clusterRef` object.
 
 ## Flux translation rules
 
@@ -75,7 +76,7 @@ Cross-resource references (`repositoryRef`, `clusterRef`, etc.) to cluster-scope
 3. Strip a leading `./` from Flux paths when translating into `git.folder`.
 4. Translate Flux `dependsOn` into `ServiceDeployment.dependencies` only when the dependency is a real runtime prerequisite.
 5. Translate each `HelmRelease` into one `ServiceDeployment` using `spec.helm`.
-6. Map `HelmRelease.spec.chart.spec.chart` to `helm.chart`, `version` to `helm.version`, and source repo data to either `helm.url` or `helm.repository`.
+6. Map `HelmRelease.spec.chart.spec.chart` to `helm.chart`, `version` to `helm.version`, and the Helm repository URL to `helm.url`. Only generate a `HelmRepository` CRD when authentication credentials are required for the chart repository; for public repositories always use `helm.url` directly on the `ServiceDeployment`.
 7. Map inline Flux Helm values to `helm.values` and values sourced from secrets or config maps to `helm.valuesFrom` or `helm.valuesConfigMapRef` when supported by the target CRD version.
 8. Translate `targetNamespace` to `ServiceDeployment.spec.namespace`.
 9. Carry unsupported Flux behavior such as `suspend` or fine-grained interval tuning into review notes when there is no exact Plural field required.

@@ -18,10 +18,7 @@ spec:
   git:
     ref: main
     folder: services/checkout/overlays/dev
-  clusterRef:
-    kind: Cluster
-    name: dev-us-east-1
-    namespace: infra
+  cluster: dev-us-east-1
 ---
 apiVersion: deployments.plural.sh/v1alpha1
 kind: ServiceDeployment
@@ -36,10 +33,7 @@ spec:
   git:
     ref: main
     folder: services/checkout/overlays/prod
-  clusterRef:
-    kind: Cluster
-    name: prod-us-east-1
-    namespace: infra
+  cluster: prod-us-east-1
 ---
 apiVersion: deployments.plural.sh/v1alpha1
 kind: Pipeline

@@ -6,14 +6,6 @@ spec:
   url: ssh://git@github.com/acme/platform-infra.git
 ---
 apiVersion: deployments.plural.sh/v1alpha1
-kind: HelmRepository
-metadata:
-  name: ingress-nginx
-  namespace: infra
-spec:
-  url: https://kubernetes.github.io/ingress-nginx
----
-apiVersion: deployments.plural.sh/v1alpha1
 kind: ServiceDeployment
 metadata:
   name: ingress-nginx
@@ -23,16 +15,11 @@ spec:
   helm:
     chart: ingress-nginx
     version: 4.10.1
-    repository:
-      name: ingress-nginx
-      namespace: infra
+    url: https://kubernetes.github.io/ingress-nginx
     values:
       controller:
         replicaCount: 2
-  clusterRef:
-    kind: Cluster
-    name: prod-us-east-1
-    namespace: infra
+  cluster: prod-us-east-1
 ---
 apiVersion: deployments.plural.sh/v1alpha1
 kind: ServiceDeployment
@@ -49,7 +36,4 @@ spec:
     folder: services/payments/overlays/prod
   dependencies:
     - name: ingress-nginx
-  clusterRef:
-    kind: Cluster
-    name: prod-us-east-1
-    namespace: infra
+  cluster: prod-us-east-1

@@ -1,0 +1,57 @@
+apiVersion: deployments.plural.sh/v1alpha1
+kind: GitRepository
+metadata:
+  name: platform-infra
+spec:
+  url: ssh://git@github.com/acme/platform-infra.git
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: HelmRepository
+metadata:
+  name: external-dns
+  namespace: infra
+spec:
+  url: https://kubernetes-sigs.github.io/external-dns
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: Project
+metadata:
+  name: payments
+spec:
+  description: Payments team workloads
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: ServiceDeployment
+metadata:
+  name: payments-prod
+  namespace: payments
+spec:
+  namespace: payments
+  git:
+    folder: services/payments/overlays/prod
+    ref: main
+  repositoryRef:
+    name: platform-infra
+  clusterRef:
+    name: prod-us-east-1
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: GlobalService
+metadata:
+  name: external-dns-fleet
+  namespace: infra
+spec:
+  tags:
+    addon-external-dns: "true"
+    environment: prod
+  template:
+    namespace: kube-system
+    helm:
+      chart: external-dns
+      version: "1.15.0"
+      valuesFiles:
+        - values/common.yaml
+        - values/prod.yaml
+      repository:
+        name: external-dns
+        namespace: infra

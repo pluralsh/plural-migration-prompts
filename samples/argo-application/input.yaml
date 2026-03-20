@@ -1,0 +1,64 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: payments
+  namespace: argocd
+spec:
+  description: Payments team workloads
+  destinations:
+    - namespace: payments
+      name: prod-us-east-1
+  sourceRepos:
+    - ssh://git@github.com/acme/platform-infra.git
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: payments-prod
+  namespace: argocd
+spec:
+  project: payments
+  destination:
+    namespace: payments
+    name: prod-us-east-1
+  source:
+    repoURL: ssh://git@github.com/acme/platform-infra.git
+    path: services/payments/overlays/prod
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: external-dns-fleet
+  namespace: argocd
+spec:
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            addon-external-dns: "true"
+            environment: prod
+  template:
+    metadata:
+      name: external-dns
+    spec:
+      destination:
+        namespace: kube-system
+        name: "{{name}}"
+      project: payments
+      source:
+        chart: external-dns
+        repoURL: https://kubernetes-sigs.github.io/external-dns
+        targetRevision: 1.15.0
+        helm:
+          valueFiles:
+            - values/common.yaml
+            - values/prod.yaml
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

@@ -1,0 +1,39 @@
+apiVersion: deployments.plural.sh/v1alpha1
+kind: GitRepository
+metadata:
+  name: app-config
+spec:
+  url: ssh://git@github.com/acme/app-config.git
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: PrAutomation
+metadata:
+  name: checkout-updates
+spec:
+  role: UPDATE
+  name: checkout-updates
+  title: Update checkout image references
+  message: Update checkout image references from the latest approved tag
+  branch: main
+  branchPrefix: checkout-image-update
+  scmConnectionRef:
+    kind: ScmConnection
+    name: github-acme  # replace with your actual ScmConnection name; see assumptions
+  repositoryRef:
+    kind: GitRepository
+    name: app-config
+  updates:
+    yamlOverlays:
+      - file: services/checkout/deployment.yaml
+        yaml: |
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: checkout
+                    image: ghcr.io/acme/checkout:{{ configuration.image_tag }}
+        templated: true
+  configuration:
+    - name: image_tag
+      type: STRING
+      documentation: Tag selected from the upstream Flux image policy replacement flow.

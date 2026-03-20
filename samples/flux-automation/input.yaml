@@ -1,0 +1,53 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: app-config
+  namespace: flux-system
+spec:
+  ref:
+    branch: main
+  url: ssh://git@github.com/acme/app-config.git
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: checkout
+  namespace: flux-system
+spec:
+  image: ghcr.io/acme/checkout
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: checkout-stable
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: checkout
+  policy:
+    semver:
+      range: 1.x
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: checkout-updates
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: app-config
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: platform@acme.io
+        name: platform-bot
+      messageTemplate: "Update checkout image to {{range .Updated.Images}}{{println .}}{{end}}"
+  update:
+    path: ./services/checkout
+    strategy: Setters

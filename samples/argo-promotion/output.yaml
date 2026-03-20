@@ -1,0 +1,66 @@
+apiVersion: deployments.plural.sh/v1alpha1
+kind: GitRepository
+metadata:
+  name: platform-infra
+spec:
+  url: ssh://git@github.com/acme/platform-infra.git
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: ServiceDeployment
+metadata:
+  name: checkout-dev
+  namespace: checkout
+spec:
+  namespace: checkout
+  repositoryRef:
+    kind: GitRepository
+    name: platform-infra
+  git:
+    ref: main
+    folder: services/checkout/overlays/dev
+  clusterRef:
+    kind: Cluster
+    name: dev-us-east-1
+    namespace: infra
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: ServiceDeployment
+metadata:
+  name: checkout-prod
+  namespace: checkout
+spec:
+  namespace: checkout
+  repositoryRef:
+    kind: GitRepository
+    name: platform-infra
+  git:
+    ref: main
+    folder: services/checkout/overlays/prod
+  clusterRef:
+    kind: Cluster
+    name: prod-us-east-1
+    namespace: infra
+---
+apiVersion: deployments.plural.sh/v1alpha1
+kind: Pipeline
+metadata:
+  name: checkout-promotion
+  namespace: checkout
+spec:
+  stages:
+    - name: dev
+      services:
+        - serviceRef:
+            name: checkout-dev
+            namespace: checkout
+    - name: prod
+      services:
+        - serviceRef:
+            name: checkout-prod
+            namespace: checkout
+  edges:
+    - from: dev
+      to: prod
+      gates:
+        - name: approve-prod
+          type: APPROVAL
